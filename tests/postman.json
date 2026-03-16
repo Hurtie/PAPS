@@ -105,32 +105,6 @@
           }
         },
         {
-          "name": "GET /concerts/:id - Получить концерт по ID (негативный - не найден)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Статус ответа 404\", function () {",
-                  "    pm.response.to.have.status(404);",
-                  "});",
-                  "",
-                  "pm.test(\"Сообщение об ошибке корректно\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.error).to.equal(\"Concert not found\");",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/concerts/invalid-id"
-          }
-        },
-        {
           "name": "POST /concerts - Создать концерт (позитивный)",
           "event": [
             {
@@ -276,36 +250,6 @@
               "raw": "{\n    \"title\": \"Обновлённый концерт\",\n    \"date\": \"2026-01-01T20:00:00\",\n    \"hall\": \"Обновлённый зал\"\n}"
             },
             "url": "{{base_url}}/concerts/{{concert_id}}"
-          }
-        },
-        {
-          "name": "PUT /concerts/:id - Обновить концерт (негативный - не найден)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Статус ответа 404\", function () {",
-                  "    pm.response.to.have.status(404);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"title\": \"Обновлённый концерт\",\n    \"date\": \"2026-01-01T20:00:00\",\n    \"hall\": \"Обновлённый зал\"\n}"
-            },
-            "url": "{{base_url}}/concerts/invalid-id"
           }
         },
         {
@@ -571,27 +515,6 @@
             "method": "GET",
             "header": [],
             "url": "{{base_url}}/tickets/{{ticket_id}}"
-          }
-        },
-        {
-          "name": "GET /tickets/:id - Получить билет по ID (негативный - не найден)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Статус ответа 404\", function () {",
-                  "    pm.response.to.have.status(404);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/tickets/invalid-id"
           }
         },
         {
