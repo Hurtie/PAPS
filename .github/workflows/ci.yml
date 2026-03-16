@@ -28,9 +28,9 @@ jobs:
       - name: Install Newman (Postman CLI)
         run: npm install -g newman
 
-      - name: Run integration tests (Postman collection)
+      - name: Run integration tests
         run: |
-          newman run tests/postman_collection.json \
+          newman run tests/postman.json \
             --env-var "base_url=http://localhost:8080/api/v1" \
             --reporters cli,json --reporter-json-export test-results.json
 
