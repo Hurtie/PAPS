@@ -1,0 +1,714 @@
+{
+  "info": {
+    "name": "Тесты API билетной системы",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Концерты",
+      "item": [
+        {
+          "name": "GET /concerts - Получить все концерты",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Тело ответа - массив\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test(\"Каждый концерт содержит обязательные поля\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    jsonData.forEach(concert => {",
+                  "        pm.expect(concert).to.have.property('id');",
+                  "        pm.expect(concert).to.have.property('title');",
+                  "        pm.expect(concert).to.have.property('date');",
+                  "        pm.expect(concert).to.have.property('hall');",
+                  "        pm.expect(concert).to.have.property('created_at');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/concerts"
+          }
+        },
+        {
+          "name": "GET /concerts/:id - Получить концерт по ID (позитивный)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Создаём концерт, если переменная concert_id не задана",
+                  "if (!pm.environment.get(\"concert_id\")) {",
+                  "    const requestBody = {",
+                  "        title: \"Тестовый концерт\",",
+                  "        date: \"2025-12-31T20:00:00\",",
+                  "        hall: \"Тестовый зал\"",
+                  "    };",
+                  "    pm.sendRequest({",
+                  "        url: pm.environment.get(\"base_url\") + \"/concerts\",",
+                  "        method: 'POST',",
+                  "        header: { 'Content-Type': 'application/json' },",
+                  "        body: { mode: 'raw', raw: JSON.stringify(requestBody) }",
+                  "    }, function (err, res) {",
+                  "        if (!err) {",
+                  "            const concert = res.json();",
+                  "            pm.environment.set(\"concert_id\", concert.id);",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"ID концерта совпадает с запрошенным\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.equal(pm.environment.get(\"concert_id\"));",
+                  "});",
+                  "",
+                  "pm.test(\"Концерт содержит обязательные поля\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('title');",
+                  "    pm.expect(jsonData).to.have.property('date');",
+                  "    pm.expect(jsonData).to.have.property('hall');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/concerts/{{concert_id}}"
+          }
+        },
+        {
+          "name": "GET /concerts/:id - Получить концерт по ID (негативный - не найден)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Сообщение об ошибке корректно\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.equal(\"Concert not found\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/concerts/invalid-id"
+          }
+        },
+        {
+          "name": "POST /concerts - Создать концерт (позитивный)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Ответ содержит ID\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.not.be.empty;",
+                  "    pm.environment.set(\"concert_id\", jsonData.id);",
+                  "});",
+                  "",
+                  "pm.test(\"Поле created_at присутствует\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('created_at');",
+                  "});",
+                  "",
+                  "pm.test(\"Название соответствует запросу\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.title).to.equal(\"Новогодний концерт\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Новогодний концерт\",\n    \"date\": \"2025-12-31T20:00:00\",\n    \"hall\": \"Главный зал\"\n}"
+            },
+            "url": "{{base_url}}/concerts"
+          }
+        },
+        {
+          "name": "POST /concerts - Создать концерт (негативный - без поля)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Сообщение об ошибке содержит информацию о пропущенных полях\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.include(\"Missing required fields\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Концерт без даты\"\n}"
+            },
+            "url": "{{base_url}}/concerts"
+          }
+        },
+        {
+          "name": "PUT /concerts/:id - Обновить концерт (позитивный)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Убедимся, что concert_id существует",
+                  "if (!pm.environment.get(\"concert_id\")) {",
+                  "    const requestBody = {",
+                  "        title: \"Концерт для обновления\",",
+                  "        date: \"2025-12-31T20:00:00\",",
+                  "        hall: \"Предварительный зал\"",
+                  "    };",
+                  "    pm.sendRequest({",
+                  "        url: pm.environment.get(\"base_url\") + \"/concerts\",",
+                  "        method: 'POST',",
+                  "        header: { 'Content-Type': 'application/json' },",
+                  "        body: { mode: 'raw', raw: JSON.stringify(requestBody) }",
+                  "    }, function (err, res) {",
+                  "        if (!err) {",
+                  "            const concert = res.json();",
+                  "            pm.environment.set(\"concert_id\", concert.id);",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Название обновлено\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.title).to.equal(\"Обновлённый концерт\");",
+                  "});",
+                  "",
+                  "pm.test(\"Поле updated_at добавилось\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('updated_at');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Обновлённый концерт\",\n    \"date\": \"2026-01-01T20:00:00\",\n    \"hall\": \"Обновлённый зал\"\n}"
+            },
+            "url": "{{base_url}}/concerts/{{concert_id}}"
+          }
+        },
+        {
+          "name": "PUT /concerts/:id - Обновить концерт (негативный - не найден)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Обновлённый концерт\",\n    \"date\": \"2026-01-01T20:00:00\",\n    \"hall\": \"Обновлённый зал\"\n}"
+            },
+            "url": "{{base_url}}/concerts/invalid-id"
+          }
+        },
+        {
+          "name": "DELETE /concerts/:id - Удалить концерт (позитивный)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Создаём концерт для удаления",
+                  "const requestBody = {",
+                  "    title: \"Концерт для удаления\",",
+                  "    date: \"2025-12-31T20:00:00\",",
+                  "    hall: \"Удаляемый зал\"",
+                  "};",
+                  "pm.sendRequest({",
+                  "    url: pm.environment.get(\"base_url\") + \"/concerts\",",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify(requestBody) }",
+                  "}, function (err, res) {",
+                  "    if (!err) {",
+                  "        const concert = res.json();",
+                  "        pm.environment.set(\"concert_id\", concert.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test(\"Тело ответа пусто\", function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});",
+                  "",
+                  "// Проверяем, что концерт действительно удалён",
+                  "pm.sendRequest({",
+                  "    url: pm.environment.get(\"base_url\") + \"/concerts/\" + pm.environment.get(\"concert_id\"),",
+                  "    method: 'GET'",
+                  "}, function (err, res) {",
+                  "    pm.test(\"Концерт больше не существует\", function () {",
+                  "        pm.expect(res.code).to.equal(404);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/concerts/{{concert_id}}"
+          }
+        },
+        {
+          "name": "DELETE /concerts/:id - Удалить концерт (негативный - уже удалён)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/concerts/{{concert_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Билеты",
+      "item": [
+        {
+          "name": "GET /tickets - Получить все билеты",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Ответ - массив\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/tickets"
+          }
+        },
+        {
+          "name": "GET /tickets?concert_id= - Получить билеты по концерту",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Создаём концерт и билет, если нет",
+                  "if (!pm.environment.get(\"concert_id\")) {",
+                  "    const concertBody = {",
+                  "        title: \"Концерт для билетов\",",
+                  "        date: \"2025-12-31T20:00:00\",",
+                  "        hall: \"Билетный зал\"",
+                  "    };",
+                  "    pm.sendRequest({",
+                  "        url: pm.environment.get(\"base_url\") + \"/concerts\",",
+                  "        method: 'POST',",
+                  "        header: { 'Content-Type': 'application/json' },",
+                  "        body: { mode: 'raw', raw: JSON.stringify(concertBody) }",
+                  "    }, function (err, res) {",
+                  "        if (!err) {",
+                  "            const concert = res.json();",
+                  "            pm.environment.set(\"concert_id\", concert.id);",
+                  "            // Создаём билет",
+                  "            const ticketBody = {",
+                  "                concert_id: concert.id,",
+                  "                seat: \"A1\",",
+                  "                price: 100",
+                  "            };",
+                  "            pm.sendRequest({",
+                  "                url: pm.environment.get(\"base_url\") + \"/tickets\",",
+                  "                method: 'POST',",
+                  "                header: { 'Content-Type': 'application/json' },",
+                  "                body: { mode: 'raw', raw: JSON.stringify(ticketBody) }",
+                  "            }, function (err2, res2) {",
+                  "                if (!err2) {",
+                  "                    const ticket = res2.json();",
+                  "                    pm.environment.set(\"ticket_id\", ticket.id);",
+                  "                }",
+                  "            });",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Все билеты принадлежат указанному концерту\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const concertId = pm.environment.get(\"concert_id\");",
+                  "    jsonData.forEach(ticket => {",
+                  "        pm.expect(ticket.concert_id).to.equal(concertId);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/tickets?concert_id={{concert_id}}"
+          }
+        },
+        {
+          "name": "GET /tickets/:id - Получить билет по ID (позитивный)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Создаём билет, если ticket_id не задан",
+                  "if (!pm.environment.get(\"ticket_id\")) {",
+                  "    // Сначала создаём концерт",
+                  "    const concertBody = {",
+                  "        title: \"Концерт для билета\",",
+                  "        date: \"2025-12-31T20:00:00\",",
+                  "        hall: \"Зал для билета\"",
+                  "    };",
+                  "    pm.sendRequest({",
+                  "        url: pm.environment.get(\"base_url\") + \"/concerts\",",
+                  "        method: 'POST',",
+                  "        header: { 'Content-Type': 'application/json' },",
+                  "        body: { mode: 'raw', raw: JSON.stringify(concertBody) }",
+                  "    }, function (err, res) {",
+                  "        if (!err) {",
+                  "            const concert = res.json();",
+                  "            pm.environment.set(\"concert_id\", concert.id);",
+                  "            // Создаём билет",
+                  "            const ticketBody = {",
+                  "                concert_id: concert.id,",
+                  "                seat: \"B2\",",
+                  "                price: 150",
+                  "            };",
+                  "            pm.sendRequest({",
+                  "                url: pm.environment.get(\"base_url\") + \"/tickets\",",
+                  "                method: 'POST',",
+                  "                header: { 'Content-Type': 'application/json' },",
+                  "                body: { mode: 'raw', raw: JSON.stringify(ticketBody) }",
+                  "            }, function (err2, res2) {",
+                  "                if (!err2) {",
+                  "                    const ticket = res2.json();",
+                  "                    pm.environment.set(\"ticket_id\", ticket.id);",
+                  "                }",
+                  "            });",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"ID билета совпадает\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.equal(pm.environment.get(\"ticket_id\"));",
+                  "});",
+                  "",
+                  "pm.test(\"Билет содержит обязательные поля\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('concert_id');",
+                  "    pm.expect(jsonData).to.have.property('seat');",
+                  "    pm.expect(jsonData).to.have.property('price');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('created_at');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/tickets/{{ticket_id}}"
+          }
+        },
+        {
+          "name": "GET /tickets/:id - Получить билет по ID (негативный - не найден)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/tickets/invalid-id"
+          }
+        },
+        {
+          "name": "POST /tickets - Создать билет (позитивный)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Создаём концерт, если нет",
+                  "if (!pm.environment.get(\"concert_id\")) {",
+                  "    const concertBody = {",
+                  "        title: \"Концерт для создания билета\",",
+                  "        date: \"2025-12-31T20:00:00\",",
+                  "        hall: \"Зал создания\"",
+                  "    };",
+                  "    pm.sendRequest({",
+                  "        url: pm.environment.get(\"base_url\") + \"/concerts\",",
+                  "        method: 'POST',",
+                  "        header: { 'Content-Type': 'application/json' },",
+                  "        body: { mode: 'raw', raw: JSON.stringify(concertBody) }",
+                  "    }, function (err, res) {",
+                  "        if (!err) {",
+                  "            const concert = res.json();",
+                  "            pm.environment.set(\"concert_id\", concert.id);",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Билет получил ID\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.not.be.empty;",
+                  "    pm.environment.set(\"ticket_id\", jsonData.id);",
+                  "});",
+                  "",
+                  "pm.test(\"Статус билета - available\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal(\"available\");",
+                  "});",
+                  "",
+                  "pm.test(\"Место соответствует запросу\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.seat).to.equal(\"C3\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"concert_id\": \"{{concert_id}}\",\n    \"seat\": \"C3\",\n    \"price\": 200\n}"
+            },
+            "url": "{{base_url}}/tickets"
+          }
+        },
+        {
+          "name": "POST /tickets - Создать билет (негативный - место занято)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Статус ответа 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Ошибка указывает на занятое место\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.equal(\"Seat already taken\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"concert_id\": \"{{concert_id}}\",\n    \"seat\": \"C3\",\n    \"price\": 200\n}"
+            },
+            "url": "{{base_url}}/tickets"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api/v1"
+    }
+  ]
+}

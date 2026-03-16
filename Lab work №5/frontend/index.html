@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ticket System</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        input, button { margin: 5px; padding: 8px; }
+        .concert { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+    </style>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Концерты</h1>
+    <div id="concerts"></div>
+    <h2>Добавить концерт</h2>
+    <form id="addForm">
+        <input type="text" id="title" placeholder="Название" required>
+        <input type="datetime-local" id="date" required>
+        <input type="text" id="hall" placeholder="Зал" required>
+        <button type="submit">Добавить</button>
+    </form>
+
+    <script>
+        const API_BASE = '/api/v1';  // через nginx прокси
+
+        async function loadConcerts() {
+            const res = await fetch(`${API_BASE}/concerts`);
+            const concerts = await res.json();
+            const container = document.getElementById('concerts');
+            container.innerHTML = concerts.map(c => `
+                <div class="concert">
+                    <strong>${c.title}</strong><br>
+                    Дата: ${new Date(c.date).toLocaleString()}<br>
+                    Зал: ${c.hall}<br>
+                    <button onclick="deleteConcert('${c.id}')">Удалить</button>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('addForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const date = document.getElementById('date').value;
+            const hall = document.getElementById('hall').value;
+            await fetch(`${API_BASE}/concerts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, date: new Date(date).toISOString(), hall })
+            });
+            loadConcerts();
+        });
+
+        window.deleteConcert = async (id) => {
+            await fetch(`${API_BASE}/concerts/${id}`, { method: 'DELETE' });
+            loadConcerts();
+        };
+
+        loadConcerts();
+    </script>
+</body>
+</html>
