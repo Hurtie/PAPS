@@ -2,9 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ Lab work №5, main ]
   pull_request:
-    branches: [ main ]
+    branches: [ Lab work №5, main ]
 
 jobs:
   build-and-test:
